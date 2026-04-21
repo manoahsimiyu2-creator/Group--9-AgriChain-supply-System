@@ -1,66 +1,69 @@
-/* Project: AgriChain-Biosystems
-   Milestone: 2 - Control Logic & Object Introduction
-   Features: Encapsulation, Classes, and Simulation Loops
-*/
-
 #include <iostream>
 #include <string>
+#include <iomanip> // For nice decimal formatting
 
 using namespace std;
 
-// Requirement: Introduction of Classes (The 'Blueprint' for our crops)
-class Crop {
+class CropNode {
 private:
-    // Requirement: Encapsulation (Hiding data for safety)
-    string species;
-    float moistureLevel;
-    int dayCount;
+    string batchID;
+    float moisture;
+    int approvedCycles;
+    int totalCycles;
 
 public:
-    // Constructor: Initializes the object state
-    Crop(string name, float startMoisture) {
-        species = name;
-        moistureLevel = startMoisture;
-        dayCount = 1;
+    CropNode(string id, float startMoisture) {
+        batchID = id;
+        moisture = startMoisture;
+        approvedCycles = 0;
+        totalCycles = 0;
     }
 
-    // Requirement: Decision-making logic
-    void updateStatus() {
-        cout << "Day " << dayCount << " Monitoring [" << species << "]" << endl;
+    void runQualityCheck() {
+        totalCycles++;
+        cout << "Running Check for Batch: " << batchID << "..." << endl;
         
-        if (moistureLevel < 20.0) {
-            cout << " >> ACTION: Moisture critical (" << moistureLevel << "%). Irrigation ON." << endl;
-            moistureLevel += 15.0; // Adding water
+        if (moisture >= 20.0 && moisture <= 60.0) {
+            cout << " >> [PASS] Quality standard met." << endl;
+            approvedCycles++;
         } else {
-            cout << " >> STATUS: Moisture stable (" << moistureLevel << "%)." << endl;
+            cout << " >> [FAIL] Quality out of bounds. Irrigation/Drainage required." << endl;
+            // Adjustment logic
+            if (moisture < 20.0) moisture += 15.0;
+            else moisture -= 10.0;
         }
+        moisture -= 2.0; // Environmental depletion
+    }
+
+    // This mimics your Dashboard screenshot!
+    void displayDashboard() {
+        float rate = (float)approvedCycles / totalCycles * 100;
         
-        moistureLevel -= 2.5; // Simulate daily natural water loss
-        dayCount++;
-        cout << "--------------------------------------------" << endl;
+        cout << "\n===========================================" << endl;
+        cout << "      AGRI-CHAIN QUALITY DASHBOARD         " << endl;
+        cout << "===========================================" << endl;
+        cout << " Batch ID:    " << batchID << endl;
+        cout << " Total Checks: " << totalCycles << endl;
+        cout << " Approved:     " << approvedCycles << endl;
+        cout << " Rejected:     " << (totalCycles - approvedCycles) << endl;
+        cout << " Approve Rate: " << fixed << setprecision(1) << rate << "%" << endl;
+        cout << "===========================================\n" << endl;
     }
 };
 
 int main() {
-    // Requirement: Input Validation & User Interaction
-    float initialSensorData;
-    cout << "=== AGRI-CHAIN BIOSYSTEMS: MILESTONE 2 ===" << endl;
-    cout << "Enter initial sensor moisture reading (0-100): ";
-    cin >> initialSensorData;
+    float sensorInput;
+    cout << "Initialize System - Enter Sensor Reading: ";
+    cin >> sensorInput;
 
-    // Basic validation
-    if (initialSensorData < 0 || initialSensorData > 100) {
-        cout << "Sensor Error! Defaulting to 25.0%" << endl;
-        initialSensorData = 25.0;
+    CropNode batch01("JUJA-WHEAT-001", sensorInput);
+
+    // Simulate 6 batches/cycles to match your screenshot
+    for(int i = 0; i < 6; i++) {
+        batch01.runQualityCheck();
     }
 
-    // Requirement: Object Introduction
-    Crop myWheat("Wheat-Field-A1", initialSensorData);
-
-    // Requirement: Loop-based simulation cycler (Simulating 5 days)
-    for (int i = 0; i < 5; i++) {
-        myWheat.updateStatus();
-    }
+    batch01.displayDashboard();
 
     system("pause");
     return 0;
