@@ -1,7 +1,8 @@
 // ============================================================
 //  ICS 2276: Computer Programming II
 //  Agricultural Supply Chain System
-//  Milestone 4: Modular Architecture & System Robustness
+//  Milestone 4: Modular Architecture
+//  ** UPDATED: 1000 Realistic Kenyan Datasets ** & System Robustness
 //
 //  CHANGES FROM MILESTONE 3:
 //  - Custom exception classes for domain-specific errors
@@ -20,15 +21,16 @@
 #include <string>
 #include <iomanip>
 #include <ctime>
+#include "KenyanDataGenerator.h"
 
 using namespace std;
 
 // ============================================================
 //  CONSTANTS
 // ============================================================
-const int MAX_PRODUCTS  = 20;
-const int MAX_ORDERS    = 50;
-const int MAX_SUPPLIERS = 10;
+const int MAX_PRODUCTS  = 200;
+const int MAX_ORDERS    = 750;
+const int MAX_SUPPLIERS =  50;
 
 const string INVENTORY_FILE = "inventory.csv";
 const string ORDERS_FILE    = "orders.csv";
@@ -606,7 +608,7 @@ private:
 public:
     InventoryManager(Warehouse w)
         : warehouse(w), productCount(0),
-          orderCount(0), supplierCount(0), orderCounter(4001) {}
+          orderCount(0), supplierCount(0), orderCounter(8001) {}
 
     ~InventoryManager() {
         for (int i = 0; i < productCount; i++) delete products[i];
@@ -623,6 +625,28 @@ public:
         suppliers[supplierCount++] = s;
         return true;
     }
+
+    void loadKenyanData() {
+        for (const auto& s : KENYAN_SUPPLIERS) {
+            if (supplierCount >= MAX_SUPPLIERS) break;
+            addSupplier(Supplier(s.id, s.name, s.location, s.contact, s.rating));
+        }
+        for (const auto& p : KENYAN_PRODUCTS) {
+            if (productCount >= MAX_PRODUCTS) break;
+            if (p.type == "Fresh")
+                addProduct(new FreshProduce(p.id, p.name, p.category, p.unitPrice,
+                    p.quantity, p.reorderLevel, p.shelfLifeDays, p.storageTemp));
+            else
+                addProduct(new ProcessedGood(p.id, p.name, p.category, p.unitPrice,
+                    p.quantity, p.reorderLevel, p.packagingType, p.expiryMonths));
+        }
+        logger.info("Loaded " + to_string(productCount) + " products and " +
+                    to_string(supplierCount) + " suppliers from Kenyan dataset");
+        cout << "[INIT] Loaded " << supplierCount << " suppliers and "
+             << productCount << " products.\n";
+    }
+
+
 
     int getTotalStock(int index = 0) const {
         if (index >= productCount) return 0;
@@ -940,29 +964,19 @@ void runSimulation(InventoryManager& mgr) {
 // ============================================================
 int main() {
     cout << "============================================================\n";
-    cout << "     AGRICULTURAL SUPPLY CHAIN SYSTEM v4.0\n";
-    cout << "     ICS 2276 | Milestone 4: Modular Architecture\n";
+    cout << "     AGRICULTURAL SUPPLY CHAIN SYSTEM v4.0 | 1,000 Kenyan Datasets\n";
+    cout << "     ICS 2276 | Milestone 4: Modular Architecture
+//  ** UPDATED: 1000 Realistic Kenyan Datasets **\n";
     cout << "============================================================\n\n";
 
     logger.info("=== System started ===");
 
     try {
-        Warehouse warehouse(301, "Nakuru Central Store", 5000);
+        Warehouse warehouse(301, "Nakuru National Warehouse", 500000);
         InventoryManager mgr(warehouse);
 
-        // Suppliers
-        mgr.addSupplier(Supplier(501, "Rift Valley Farms Ltd",  "Nakuru, Kenya",  "+254700000001", 8.5));
-        mgr.addSupplier(Supplier(502, "Coastal Agro Supplies",  "Mombasa, Kenya", "+254711000002", 6.0));
-        mgr.addSupplier(Supplier(503, "Highland Fresh Produce", "Eldoret, Kenya", "+254722000003", 9.2));
-
-        // Products
-        mgr.addProduct(new FreshProduce(1001, "Tomatoes", "Vegetable", 80.00, 200, 50,  7,  10.0));
-        mgr.addProduct(new FreshProduce(1002, "Bananas",  "Fruit",     35.00, 150, 40,  14, 13.0));
-        mgr.addProduct(new FreshProduce(1003, "Milk",     "Dairy",    120.00,  80, 30,  3,   4.0));
-        mgr.addProduct(new ProcessedGood(1004, "Maize",       "Grain",     45.50, 320, 100, "Sack",  12));
-        mgr.addProduct(new ProcessedGood(1005, "Wheat Flour", "Grain",     60.00, 250,  80, "Sack",  9));
-        mgr.addProduct(new ProcessedGood(1006, "Cooking Oil", "Processed", 250.00, 60,  20, "Crate", 18));
-
+        // Load 1,000 realistic Kenyan datasets
+        mgr.loadKenyanData();
         // Load previously saved orders if they exist
         mgr.loadData();
 

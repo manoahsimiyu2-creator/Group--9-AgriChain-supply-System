@@ -28,6 +28,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include "KenyanDataGenerator.h"
 #include <chrono>
 
 using namespace std;
@@ -36,8 +37,8 @@ using namespace std;
 // ============================================================
 //  CONSTANTS
 // ============================================================
-const int MAX_PRODUCTS  = 20;
-const int MAX_SUPPLIERS = 10;
+const int MAX_PRODUCTS  = 200;
+const int MAX_SUPPLIERS =  50;
 const int MAX_SHIPMENTS = 20;
 
 const string INVENTORY_FILE = "inventory.csv";
@@ -789,7 +790,7 @@ public:
           suppliers("Suppliers", MAX_SUPPLIERS),
           orders("Orders", 50),
           warehouse(w),
-          orderCounter(5001) {}
+          orderCounter(8001) {}
 
     ~InventoryManager() {
         for (int i = 0; i < products.size(); i++) delete products.get(i);
@@ -948,6 +949,36 @@ public:
     void viewShipments() { tracker.displayAll(); }
 
     // ---- FILE PERSISTENCE ----
+
+    void loadKenyanData() {
+        for (const auto& s : KENYAN_SUPPLIERS) {
+            if (suppliers.size() >= (size_t)MAX_SUPPLIERS) break;
+            suppliers.add(Supplier(s.id, s.name, s.location, s.contact, s.rating));
+        }
+        for (const auto& p : KENYAN_PRODUCTS) {
+            if (products.size() >= (size_t)MAX_PRODUCTS) break;
+            if (p.type == "Fresh")
+                products.add(new FreshProduce(p.id, p.name, p.category,
+                    p.unitPrice, p.quantity, p.reorderLevel,
+                    p.shelfLifeDays, p.storageTemp));
+            else
+                products.add(new ProcessedGood(p.id, p.name, p.category,
+                    p.unitPrice, p.quantity, p.reorderLevel,
+                    p.packagingType, p.expiryMonths));
+        }
+        for (const auto& o : KENYAN_ORDERS) {
+            if (orders.size() >= 750) break;
+            Order ord(o.orderID, o.productID, o.productName,
+                      o.quantity, o.unitPrice);
+            orders.add(ord);
+        }
+        logger.info("Loaded " + to_string(products.size()) +
+                    " products, " + to_string(suppliers.size()) + " suppliers");
+        cout << "[INIT] Loaded " << suppliers.size() << " suppliers, "
+             << products.size() << " products, "
+             << orders.size() << " orders.\n";
+    }
+
     void saveData() {
         try {
             ofstream inv(INVENTORY_FILE);
@@ -1189,7 +1220,7 @@ void runSimulation(InventoryManager& mgr) {
 // ============================================================
 int main() {
     cout << "============================================================\n";
-    cout << "     AGRICULTURAL SUPPLY CHAIN SYSTEM v5.0\n";
+    cout << "     AGRICULTURAL SUPPLY CHAIN SYSTEM v5.0 | 1,000 Kenyan Datasets\n";
     cout << "     ICS 2276 | Milestone 5: Concurrency & Advanced Computation\n";
     cout << "============================================================\n\n";
 
@@ -1199,19 +1230,8 @@ int main() {
         Warehouse        warehouse(301, "Nakuru Central Store", 5000);
         InventoryManager mgr(warehouse);
 
-        // Suppliers
-        mgr.addSupplier(Supplier(501, "Rift Valley Farms Ltd",  "Nakuru",  "+254700000001", 8.5));
-        mgr.addSupplier(Supplier(502, "Coastal Agro Supplies",  "Mombasa", "+254711000002", 6.0));
-        mgr.addSupplier(Supplier(503, "Highland Fresh Produce", "Eldoret", "+254722000003", 9.2));
-
-        // Products
-        mgr.addProduct(new FreshProduce(1001, "Tomatoes",    "Vegetable", 80.00, 200, 50,  7,  10.0));
-        mgr.addProduct(new FreshProduce(1002, "Bananas",     "Fruit",     35.00, 150, 40,  14, 13.0));
-        mgr.addProduct(new FreshProduce(1003, "Milk",        "Dairy",    120.00,  80, 30,   3,  4.0));
-        mgr.addProduct(new ProcessedGood(1004, "Maize",       "Grain",    45.50, 320, 100, "Sack",  12));
-        mgr.addProduct(new ProcessedGood(1005, "Wheat Flour", "Grain",    60.00, 250,  80, "Sack",   9));
-        mgr.addProduct(new ProcessedGood(1006, "Cooking Oil", "Processed",250.00, 60,  20, "Crate", 18));
-
+        // Load 1,000 realistic Kenyan datasets
+        mgr.loadKenyanData();
         mgr.loadData();
 
         cout << "[INIT] System initialized: " << mgr.getProductCount()
